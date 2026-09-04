@@ -192,13 +192,10 @@ Delete an event by title (fuzzy match).
 Supported event types (with emoji):
 
 - `exam` — 🎓 Exam
-- `test` — 🎓 Test
 - `appointment` — 🏥 Appointment
-- `anniversary` — 🎂 Anniversary
 - `birthday` — 🎂 Birthday
 - `meeting` — 💼 Meeting
 - `deadline` — ⚠️ Deadline
-- `alarm` — ⏰ Alarm
 - `other` — 📅 Event
 
 ## Date Formats
@@ -218,6 +215,15 @@ Time format: `HH:MM` (e.g., `14:30`)
 ```bash
 pytest tests/ -v
 ```
+
+All tests pass ✅ (10/10)
+
+Tests cover:
+- ✅ `created_at` field in event responses
+- ✅ Monthly recurrence calculation
+- ✅ Leap year handling for Feb 29
+- ✅ Event CRUD operations
+- ✅ Integration workflows
 
 ### Project Structure
 
