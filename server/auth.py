@@ -1,6 +1,6 @@
 import os
 from fastapi import HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer, HTTPAutenticationCredentials
 
 CALENDAR_API_TOKEN = os.getenv("CALENDAR_API_TOKEN", "default-token")
 
