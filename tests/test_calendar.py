@@ -29,8 +29,8 @@ class TestListEvents:
 
     def test_list_events_includes_created_at(self):
         """Test that list_events returns created_at without crashing."""
-        # Add an event
-        add_event("Team Meeting", "25/09/2026", "10:00", "meeting", "Quarterly sync")
+        # Add an event (use future date)
+        add_event("Team Meeting", "15/10/2026", "10:00", "meeting", "Quarterly sync")
 
         # List events should not crash and include created_at
         result = list_events(days_ahead=30)
@@ -43,9 +43,9 @@ class TestListEvents:
 
     def test_list_events_multiple_events(self):
         """Test list_events with multiple events all have created_at."""
-        add_event("Meeting 1", "25/09/2026", "09:00", "meeting")
-        add_event("Exam", "26/09/2026", "14:00", "exam")
-        add_event("Birthday", "27/09/2026", "00:00", "birthday")
+        add_event("Meeting 1", "15/10/2026", "09:00", "meeting")
+        add_event("Exam", "16/10/2026", "14:00", "exam")
+        add_event("Birthday", "17/10/2026", "00:00", "birthday")
 
         result = list_events(days_ahead=30)
 
@@ -143,6 +143,201 @@ class TestLeapYearRecurrence:
         print(f"✓ Feb 29 yearly recurrence through leap years handled correctly")
 
 
+class TestEditEvent:
+    """Test edit_event() functionality, especially editing descriptions."""
+
+    def test_edit_event_description_only(self):
+        """Test editing only the event description/notes."""
+        # Add initial event (use future date)
+        add_event("Team Meeting", "15/10/2026", "10:00", "meeting", "Initial notes")
+
+        # Edit only the description
+        result = edit_event(
+            title="Team Meeting",
+            new_notes="Updated meeting notes with action items"
+        )
+
+        assert result["success"] is True
+        assert "Updated event" in result["message"]
+
+        # Verify the edit
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["notes"] == "Updated meeting notes with action items"
+        assert event["title"] == "Team Meeting"  # Title unchanged
+        print(f"✓ Edit description only: notes updated correctly")
+
+    def test_edit_event_clear_description(self):
+        """Test clearing an event description by setting it to empty."""
+        # Add event with notes (use future date)
+        add_event("Doctor Appointment", "16/10/2026", "14:00", "appointment", "Annual checkup")
+
+        # Clear the description
+        result = edit_event(
+            title="Doctor Appointment",
+            new_notes=""
+        )
+
+        assert result["success"] is True
+
+        # Verify notes are empty
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["notes"] == ""
+        print(f"✓ Clear description: notes successfully cleared")
+
+    def test_edit_event_description_and_title(self):
+        """Test editing both title and description."""
+        add_event("Old Title", "15/10/2026", "10:00", "meeting", "Old notes")
+
+        result = edit_event(
+            title="Old Title",
+            new_title="New Title",
+            new_notes="New description with more details"
+        )
+
+        assert result["success"] is True
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["title"] == "New Title"
+        assert event["notes"] == "New description with more details"
+        print(f"✓ Edit title and description: both updated correctly")
+
+    def test_edit_event_description_and_datetime(self):
+        """Test editing description along with date and time."""
+        add_event("Meeting", "15/10/2026", "10:00", "meeting", "Original notes")
+
+        result = edit_event(
+            title="Meeting",
+            new_date_str="16/10/2026",
+            new_time_str="14:30",
+            new_notes="Rescheduled meeting discussion points"
+        )
+
+        assert result["success"] is True
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["notes"] == "Rescheduled meeting discussion points"
+        assert "16" in event["start_time"]
+        assert "14:30" in event["start_time"]
+        print(f"✓ Edit description and datetime: all updated correctly")
+
+    def test_edit_event_all_fields(self):
+        """Test editing title, type, date, time, and description together."""
+        add_event("Project Task", "15/10/2026", "09:00", "other", "Initial task")
+
+        result = edit_event(
+            title="Project Task",
+            new_title="Q4 Project Deadline",
+            new_type="deadline",
+            new_date_str="20/10/2026",
+            new_time_str="17:00",
+            new_notes="Final submission deadline for Q4 project milestone"
+        )
+
+        assert result["success"] is True
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["title"] == "Q4 Project Deadline"
+        assert event["type"] == "deadline"
+        assert event["notes"] == "Final submission deadline for Q4 project milestone"
+        assert "20" in event["start_time"]
+        assert "17:00" in event["start_time"]
+        print(f"✓ Edit all fields: all updated correctly")
+
+    def test_edit_event_fuzzy_match_title(self):
+        """Test editing event with fuzzy title matching."""
+        add_event("University Meeting", "15/10/2026", "10:00", "meeting", "Discuss plans")
+
+        # Edit using partial title match
+        result = edit_event(
+            title="University",  # Partial match
+            new_notes="Updated university discussion notes"
+        )
+
+        assert result["success"] is True
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["notes"] == "Updated university discussion notes"
+        print(f"✓ Fuzzy match title: partial title match works")
+
+    def test_edit_nonexistent_event(self):
+        """Test editing an event that doesn't exist."""
+        result = edit_event(
+            title="Nonexistent Event",
+            new_notes="This should fail"
+        )
+
+        assert result["success"] is False
+        assert "couldn't find that event" in result["message"].lower()
+        print(f"✓ Edit nonexistent event: correctly returns failure")
+
+    def test_edit_event_preserves_other_fields(self):
+        """Test that editing one field doesn't affect others."""
+        add_event(
+            title="Meeting",
+            date_str="15/10/2026",
+            time_str="10:00",
+            event_type="meeting",
+            notes="Original notes",
+            recurrence="weekly"
+        )
+
+        # Edit only notes
+        edit_event(
+            title="Meeting",
+            new_notes="Updated notes only"
+        )
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["recurrence"] == "weekly"
+        assert event["type"] == "meeting"
+        assert event["title"] == "Meeting"
+        assert "15" in event["start_time"]
+        assert "10:00" in event["start_time"]
+        print(f"✓ Edit preserves other fields: unmodified fields unchanged")
+
+    def test_edit_event_description_with_special_chars(self):
+        """Test editing description with special characters."""
+        add_event("Meeting", "15/10/2026", "10:00", "meeting", "Initial")
+
+        special_notes = 'Notes with "quotes", apostrophes\', and émojis 🎉'
+        result = edit_event(
+            title="Meeting",
+            new_notes=special_notes
+        )
+
+        assert result["success"] is True
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["notes"] == special_notes
+        print(f"✓ Special characters: handles quotes, apostrophes, and emojis")
+
+    def test_edit_event_long_description(self):
+        """Test editing with a very long description."""
+        add_event("Meeting", "15/10/2026", "10:00", "meeting", "Short")
+
+        long_notes = "x" * 500
+        result = edit_event(
+            title="Meeting",
+            new_notes=long_notes
+        )
+
+        assert result["success"] is True
+
+        list_result = list_events(days_ahead=30)
+        event = list_result["events"][0]
+        assert event["notes"] == long_notes
+        assert len(event["notes"]) == 500
+        print(f"✓ Long description: 500+ characters handled correctly")
+
+
 class TestIntegration:
     """Integration tests for full workflow."""
 
@@ -150,7 +345,7 @@ class TestIntegration:
         """Test adding event and listing returns all fields including created_at."""
         result = add_event(
             title="Project Deadline",
-            date_str="30/09/2026",
+            date_str="20/10/2026",
             time_str="17:00",
             event_type="deadline",
             notes="Q3 milestone",

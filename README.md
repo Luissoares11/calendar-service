@@ -142,9 +142,19 @@ List upcoming events.
 
 #### `POST /events/edit`
 
-Update an existing event.
+Update an existing event. You can update any combination of fields: title, date, time, description (notes), or event type.
 
-**Request:**
+**Request (minimal - update description only):**
+
+```json
+{
+  "action": "edit",
+  "title": "University Meeting",
+  "new_notes": "Updated description for the meeting"
+}
+```
+
+**Request (full - update multiple fields):**
 
 ```json
 {
@@ -152,9 +162,19 @@ Update an existing event.
   "title": "University Meeting",
   "new_title": "Updated Meeting",
   "new_date": "2026-09-06",
-  "new_time": "15:00"
+  "new_time": "15:00",
+  "new_notes": "Discuss project plans and budget",
+  "new_type": "meeting"
 }
 ```
+
+**Available Fields to Update:**
+
+- `new_title` — Update event title (optional)
+- `new_date` — Update event date (optional, formats: `DD/MM/YYYY`, `YYYY-MM-DD`)
+- `new_time` — Update event time (optional, format: `HH:MM`)
+- `new_notes` — Update event description (optional)
+- `new_type` — Update event type (optional, see [Event Types](#event-types))
 
 **Response:**
 
@@ -184,6 +204,47 @@ Delete an event by title (fuzzy match).
 {
   "success": true,
   "message": "Removed event 'University Meeting'."
+}
+```
+
+## Common Use Cases
+
+### Editing Event Descriptions
+
+Update the description/notes of an existing event:
+
+```json
+{
+  "action": "edit",
+  "title": "Team Standup",
+  "new_notes": "Daily sync: discuss blockers and plan day"
+}
+```
+
+### Updating Multiple Fields
+
+Change the date, time, and description at once:
+
+```json
+{
+  "action": "edit",
+  "title": "Project Deadline",
+  "new_date": "2026-10-15",
+  "new_time": "17:00",
+  "new_notes": "Final submission for Q4 project"
+}
+```
+
+### Changing Event Type
+
+Update the event type with a new emoji:
+
+```json
+{
+  "action": "edit",
+  "title": "Doctor Checkup",
+  "new_type": "appointment",
+  "new_notes": "Annual physical examination"
 }
 ```
 
